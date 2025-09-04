@@ -1,0 +1,12 @@
+# Core app
+streamlit>=1.36.0
+google-generativeai>=0.7.2
+
+# PDF text extraction
+PyMuPDF>=1.24.0
+
+# TiDB/MySQL connector
+mysql-connector-python>=9.0.0
+
+# Utils
+numpy>=1.26.0
