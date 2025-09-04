@@ -215,7 +215,7 @@ def main():
     
                     # ② 关键：立即清空上传控件
                     st.session_state.pop("uploader", None)
-                    st.rerun()   # ③ 强制刷新一次，file 变 None
+
 
     # 右侧：提问
     with col_right:
