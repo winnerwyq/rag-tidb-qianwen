@@ -201,7 +201,15 @@ def main():
                 h = hashlib.sha256(text.encode()).hexdigest()
 
                 with rag.db_connection.cursor() as cur:
-                   
+                    cur.execute("SELECT 1 FROM qwen_documents WHERE file_hash=%s LIMIT 1", (h,))
+                    if cur.fetchone():
+                        st.warning("⚠️ 该文件已存在，跳过")
+                    else:
+                        chunks = rag.chunk_text(text)
+                        rag.store(file.name, chunks, h)
+                        st.success(f"✅ 已存储 {file.name}")
+                        st.session_state.documents_count = rag.doc_count()
+                        st.session_state.pop("uploaded_file", None)  # 清空上传控件
 
     # 右侧：提问
     with col_right:
