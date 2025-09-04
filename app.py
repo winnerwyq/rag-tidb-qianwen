@@ -189,27 +189,29 @@ def main():
 
     # 左侧：上传（已修复）
     with col_left:
-        st.header("上传文档")
-        file = st.file_uploader("选择 PDF / TXT 文件", type=["pdf", "txt"])
-        if file:
-            with st.spinner("处理中……"):
-                text = rag.extract_pdf(file) if file.type == "application/pdf" else rag.extract_txt(file)
-                if not text.strip():
-                    st.error("❌ 提取文本失败")
-                    st.stop()
+    st.header("上传文档")
+    file = st.file_uploader("选择 PDF / TXT 文件",
+                            type=["pdf", "txt"],
+                            key="uploaded_file")     # ① 关键：加 key
+    if file:
+        with st.spinner("处理中……"):
+            text = rag.extract_pdf(file) if file.type == "application/pdf" else rag.extract_txt(file)
+            if not text.strip():
+                st.error("❌ 提取文本失败")
+                st.stop()
 
-                h = hashlib.sha256(text.encode()).hexdigest()
+            h = hashlib.sha256(text.encode()).hexdigest()
 
-                # 精准查重
-                with rag.db_connection.cursor() as cur:
-                    cur.execute("SELECT 1 FROM qwen_documents WHERE file_hash=%s LIMIT 1", (h,))
-                    if cur.fetchone():
-                        st.warning("⚠️ 该文件已存在，跳过")
-                    else:
-                        chunks = rag.chunk_text(text)
-                        rag.store(file.name, chunks, h)
-                        st.success(f"✅ 已存储 {file.name}")
-                        st.session_state.documents_count = rag.doc_count()
+            with rag.db_connection.cursor() as cur:
+                cur.execute("SELECT 1 FROM qwen_documents WHERE file_hash=%s LIMIT 1", (h,))
+                if cur.fetchone():
+                    st.warning("⚠️ 该文件已存在，跳过")
+                else:
+                    chunks = rag.chunk_text(text)
+                    rag.store(file.name, chunks, h)
+                    st.success(f"✅ 已存储 {file.name}")
+                    st.session_state.documents_count = rag.doc_count()
+                    st.session_state.pop("uploaded_file", None)   # ② 关键：立即清空
 
     # 右侧：提问
     with col_right:
