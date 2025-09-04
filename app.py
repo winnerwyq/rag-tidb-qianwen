@@ -9,6 +9,7 @@ from datetime import datetime
 from typing import List, Dict, Any
 from dashscope import Generation, TextEmbedding
 
+
 # ---------------- 页面配置 ----------------
 st.set_page_config(
     page_title="TiDB + 千问 RAG Document Q&A",
