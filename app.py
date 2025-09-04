@@ -1,6 +1,7 @@
+# -------------------- 完整代码（已合并修复） --------------------
 import streamlit as st
 import pymupdf
-import pymysql          # 与 mysql-connector-python 完全兼容
+import pymysql
 import numpy as np
 import hashlib
 import json
@@ -24,8 +25,8 @@ for k in ['documents_count', 'last_query_time', 'db_initialized', 'rag_system']:
 class RAGSystem:
     def __init__(self):
         self.db_connection = None
-        self.embedding_model = "text-embedding-v1"   # 千问通用嵌入
-        self.chat_model    = "qwen-max"              # 千问旗舰版
+        self.embedding_model = "text-embedding-v1"
+        self.chat_model    = "qwen-max"
         self.chunk_size    = 1000
         self.chunk_overlap = 200
         self._inited       = False
@@ -50,7 +51,7 @@ class RAGSystem:
         try:
             self.db_connection = pymysql.connect(
                 host=host, port=port, user=user, password=password,
-                database=database, autocommit=True,ssl={"ssl": True} 
+                database=database, autocommit=True, ssl={"ssl": True}
             )
             self._init_db()
             return True
@@ -186,29 +187,29 @@ def main():
 
     col_left, col_right = st.columns([1, 1])
 
-    # 左侧：上传
+    # 左侧：上传（已修复）
     with col_left:
-    st.header("上传文档")
-    file = st.file_uploader("选择 PDF / TXT 文件", type=["pdf", "txt"])
-    if file:
-        with st.spinner("处理中……"):
-            text = rag.extract_pdf(file) if file.type == "application/pdf" else rag.extract_txt(file)
-            if not text.strip():
-                st.error("❌ 提取文本失败")
-                st.stop()
+        st.header("上传文档")
+        file = st.file_uploader("选择 PDF / TXT 文件", type=["pdf", "txt"])
+        if file:
+            with st.spinner("处理中……"):
+                text = rag.extract_pdf(file) if file.type == "application/pdf" else rag.extract_txt(file)
+                if not text.strip():
+                    st.error("❌ 提取文本失败")
+                    st.stop()
 
-            h = hashlib.sha256(text.encode()).hexdigest()
+                h = hashlib.sha256(text.encode()).hexdigest()
 
-            # 真正去查重：按 file_hash 查
-            with rag.db_connection.cursor() as cur:
-                cur.execute("SELECT 1 FROM qwen_documents WHERE file_hash=%s LIMIT 1", (h,))
-                if cur.fetchone():
-                    st.warning("⚠️ 该文件已存在，跳过")
-                else:
-                    chunks = rag.chunk_text(text)
-                    rag.store(file.name, chunks, h)
-                    st.success(f"✅ 已存储 {file.name}")
-                    st.session_state.documents_count = rag.doc_count()
+                # 精准查重
+                with rag.db_connection.cursor() as cur:
+                    cur.execute("SELECT 1 FROM qwen_documents WHERE file_hash=%s LIMIT 1", (h,))
+                    if cur.fetchone():
+                        st.warning("⚠️ 该文件已存在，跳过")
+                    else:
+                        chunks = rag.chunk_text(text)
+                        rag.store(file.name, chunks, h)
+                        st.success(f"✅ 已存储 {file.name}")
+                        st.session_state.documents_count = rag.doc_count()
 
     # 右侧：提问
     with col_right:
